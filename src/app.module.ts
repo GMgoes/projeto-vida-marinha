@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import envConfig from './config/env.config';
 import { TileModule } from './modules/tile/tile.module';
+import envConfig from './config/env.config';
 
 @Module({
   imports: [

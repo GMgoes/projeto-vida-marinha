@@ -1,4 +1,10 @@
-export default () => ({
-  PORT: Number(process.env.PORT || '3000'),
-  NODE_ENV: process.env.NODE_ENV || 'dev',
+import { ConfigFactory } from '@nestjs/config';
+
+const { PORT, NODE_ENV } = process.env;
+
+const envConfig: ConfigFactory = () => ({
+  port: Number(PORT || 3000),
+  environment: NODE_ENV || 'dev',
 });
+
+export default envConfig;

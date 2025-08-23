@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { writeFileSync } from 'fs';
+import { GenerateImageQuery, GEOGRAPHIC_LAYERS, PROJECTION } from './types';
+import axios from 'axios';
 
 @Injectable()
 export class TileService {
   private processLatitudeAndLongitude(
+    zoom: number,
     latitude: number,
     longitude: number,
-    zoom: number = 8,
   ) {
     const n = 2 ** zoom;
 
@@ -19,33 +21,41 @@ export class TileService {
     };
   }
 
-  async generateImage(
-    latitude: string,
-    longitude: string,
-    zoom: number = 8,
-  ): Promise<string> {
-    const { x, y } = this.processLatitudeAndLongitude(
-      Number(latitude),
-      Number(longitude),
-      zoom,
-    );
+  async generateImage({
+    latitude,
+    longitude,
+    zoom = '6',
+    ...input
+  }: GenerateImageQuery) {
+    try {
+      const { x, y } = this.processLatitudeAndLongitude(
+        Number(zoom),
+        Number(latitude),
+        Number(longitude),
+      );
 
-    const today = new Date().toISOString().split('T').at(0);
+      const layer = GEOGRAPHIC_LAYERS[input.layer];
+      const projection = PROJECTION[input.projection];
 
-    const mode = 'MODIS_Terra_CorrectedReflectance_Bands721';
+      const day = input.day || new Date().toISOString().split('T').at(0);
 
-    const url = `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/${mode}/default/${today}/250m/${zoom}/${y}/${x}.jpg`;
+      const response = await axios.get(
+        `https://gibs.earthdata.nasa.gov/wmts/${projection}/best/${layer}/default/${day}/250m/${zoom}/${y}/${x}.jpg`,
+        {
+          responseType: 'arraybuffer',
+        },
+      );
 
-    const response = await fetch(url);
+      const buffer = Buffer.from(response.data);
 
-    if (!response.ok) throw new Error(`Error - ${response.status}`);
+      const filename = `sample/tile_from_${projection}_${day}_${zoom}_${x}_${y}.jpg`;
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+      writeFileSync(filename, buffer);
 
-    const filename = `sample/tile_${today}_${zoom}_${x}_${y}.jpg`;
-
-    writeFileSync(filename, buffer);
-
-    return filename;
+      return filename;
+    } catch (error) {
+      console.error('Tile > Service > Error', error);
+      throw error;
+    }
   }
 }

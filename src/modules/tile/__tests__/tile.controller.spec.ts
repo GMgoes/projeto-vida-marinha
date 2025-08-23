@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TileController } from '../tile.controller';
 import { TileService } from '../tile.service';
+import { GEOGRAPHIC_LAYERS, PROJECTION } from '../types';
 
 const tileServiceMock = { generateImage: jest.fn() };
 
@@ -17,17 +18,19 @@ describe('TileController', () => {
   });
 
   describe('generateImage', () => {
-    it('should generate a image', () => {
+    it('should generate a image', async () => {
       jest
         .spyOn(tileServiceMock, 'generateImage')
-        .mockResolvedValueOnce('fileName');
+        .mockResolvedValueOnce('sample/tile_2025-08-22_8_163_56.jpg');
 
-      const output = controller.generateImage({
+      const output = await controller.generateImage({
         latitude: '50',
         longitude: '50',
+        layer: 'MODIS_TERRA',
+        projection: 'GEOGRAPHIC',
       });
 
-      expect(output).toBe('fileName');
+      expect(output).toBe('sample/tile_2025-08-22_8_163_56.jpg');
     });
   });
 });
